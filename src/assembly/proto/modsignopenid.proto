@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package modsignopenid;
+
+import "koinos/options.proto";
+
+message credential {
+   string sub = 1;
+   string iss = 2;
+   uint64 created_at = 3;
+}
+
+message jwt {
+   bytes header = 1;
+   bytes payload = 2;
+   bytes signature = 3;
+}
+
+message register_arguments {
+   bytes user = 1 [(koinos.btype) = ADDRESS];
+   string sub = 2;
+   string iss = 3;
+}
+
+message unregister_arguments {
+   bytes user = 1 [(koinos.btype) = ADDRESS];
+   string sub = 2;
+}
+
+message get_credentials_args {
+   bytes user = 1 [(koinos.btype) = ADDRESS];
+}
+
+message get_credentials_result {
+   repeated credential value = 1;
+}
+
+message get_address_by_sub_args {
+   string sub = 1;
+}
+
+message address {
+   bytes value = 1 [(koinos.btype) = ADDRESS];
+}
+
+message cert {
+   bytes public_key = 1;
+   string iss = 2;
+}
+
+message get_cert_args {
+   string kid = 1;
+}
+
+message set_cert_args {
+   bytes user = 1 [(koinos.btype) = ADDRESS];
+   string kid = 2;
+   bytes public_key = 3;
+   string iss = 4;
+}

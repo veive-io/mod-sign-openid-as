@@ -1,0 +1,26 @@
+{
+  "targets": {
+    "debug": {
+      "outFile": "../build/debug/ModSignOpenid.wasm",
+      "textFile": "../build/debug/ModSignOpenid.wat",
+      "sourceMap": true,
+      "debug": true
+    },
+    "release": {
+      "outFile": "../build/release/ModSignOpenid.wasm",
+      "textFile": "../build/release/ModSignOpenid.wat",
+      "sourceMap": true,
+      "optimizeLevel": 3,
+      "shrinkLevel": 0,
+      "converge": false,
+      "noAssert": false
+    }
+  },
+  "options": {
+    "exportStart": "_start",
+    "disable": ["sign-extension", "bulk-memory"],
+    "disableWarning": "235",
+    "lib": [],
+    "use": ["abort="]
+  }
+}
