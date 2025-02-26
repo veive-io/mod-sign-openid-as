@@ -28,7 +28,7 @@ export class ModSignOpenid extends ModSign {
     );
   }
 
-  credential_address: Storage.Map<string, modsignopenid.address> = new Storage.Map(
+  credential_address: Storage.Map<Uint8Array, modsignopenid.address> = new Storage.Map(
     this.contractId,
     0,
     modsignopenid.address.decode,
@@ -51,16 +51,20 @@ export class ModSignOpenid extends ModSign {
     const isAuthorized = System.checkAuthority(authority.authorization_type.contract_call, args.user!);
     System.require(isAuthorized, `[mod-sign-openid] Not authorized by the account`);
 
-    const credential = new modsignopenid.credential();
-    credential.sub = args.sub!;
-    credential.iss = args.iss!;
-    credential.created_at = System.getBlockField("header.timestamp")!.uint64_value;
+    const current_credential_keys = this.credentials(args.user!).getManyKeys(new Uint8Array(0));
 
-    const sub_bytes = StringBytes.stringToBytes(args.sub!);
-    this.credentials(args.user!).put(sub_bytes, credential);
+    for (let i = 0; i < current_credential_keys.length; i++) {
+      const current_credential_key = current_credential_keys[i];
+      const current_credential = this.credentials(args.user!).get(current_credential_key)!;
+      System.require(current_credential.iss != args.iss!, `[mod-sign-openid] iss ${args.iss!} already registered`);
+    }
+
+    const credential = new modsignopenid.credential(args.sub!, args.iss!);
+    const credential_bytes = this._get_credential_key(args.sub!, args.iss!);
+    this.credentials(args.user!).put(credential_bytes, credential);
 
     const address = new modsignopenid.address(args.user!);
-    this.credential_address.put(args.sub!, address);
+    this.credential_address.put(credential_bytes, address);
   }
 
   /**
@@ -70,10 +74,10 @@ export class ModSignOpenid extends ModSign {
     const isAuthorized = System.checkAuthority(authority.authorization_type.contract_call, args.user!);
     System.require(isAuthorized, `not authorized by the account`);
 
-    const sub = args.sub!;
-    const sub_bytes = StringBytes.stringToBytes(sub);
-    this.credentials(args.user!).remove(sub_bytes);
-    this.credential_address.remove(sub);
+    const credential_bytes = this._get_credential_key(args.sub!, args.iss!);
+
+    this.credentials(args.user!).remove(credential_bytes);
+    this.credential_address.remove(credential_bytes);
   }
 
   /**
@@ -95,22 +99,24 @@ export class ModSignOpenid extends ModSign {
       const payload_json = StringBytes.bytesToString(jwt.payload);
       const header_json = StringBytes.bytesToString(jwt.header);
 
-      const kid = getValueFromJSON(header_json, "kid");
+      const kid = getValueFromJSON(header_json, "kid")!;
       System.require(kid != null, `[mod-sign-openid] Missing kid`);
 
-      const alg = getValueFromJSON(header_json, "alg");
+      const alg = getValueFromJSON(header_json, "alg")!;
       System.require(alg == "RS256", `[mod-sign-openid] Invalid algorithm: expected RS256`);
 
-      const iss = getValueFromJSON(payload_json, "iss");
+      const iss = getValueFromJSON(payload_json, "iss")!;
       System.require(iss != null, `[mod-sign-openid] Missing issuer`);
 
-      const sub = getValueFromJSON(payload_json, "sub");
+      const sub = getValueFromJSON(payload_json, "sub")!;
       System.require(sub != null, `[mod-sign-openid] Missing sub`);
 
-      const address = this.credential_address.get(sub!);
-      System.require(address != null, `[mod-sign-openid] Missing address for sub ${sub!}`);
+      const credential_bytes = this._get_credential_key(sub, iss);
 
-      const credential = this.credentials(address!.value!).get(StringBytes.stringToBytes(sub!));
+      const address = this.credential_address.get(credential_bytes);
+      System.require(address != null, `[mod-sign-openid] Missing address for sub ${sub}`);
+
+      const credential = this.credentials(address!.value!).get(credential_bytes);
       System.require(iss == credential!.iss, `[mod-sign-openid] Invalid iss`);
 
       const exp_str = getValueFromJSON(payload_json, "exp");
@@ -119,15 +125,15 @@ export class ModSignOpenid extends ModSign {
       const iat_str = getValueFromJSON(payload_json, "iat");
       System.require(iat_str != null, `[mod-sign-openid] Missing iat`);
 
-      const now = System.getBlockField("header.timestamp")!.uint64_value;
+      //const now = System.getBlockField("header.timestamp")!.uint64_value;
 
-      const exp : u64 = U64.parseInt(exp_str! + '000');
+      //const exp : u64 = U64.parseInt(exp_str! + '000');
       //System.require(exp > now, `[mod-sign-openid] jwt is expired at ${exp}`);
 
-      const iat : u64 = U64.parseInt(iat_str! + '000');
+      //const iat : u64 = U64.parseInt(iat_str! + '000');
       //System.require(iat + JWT_TIMELIFE_MS > now, `[mod-sign-openid] jwt is not valid anymore. Expired at at ${iat + JWT_TIMELIFE_MS}`);
       
-      const cert = this.cert.get(StringBytes.stringToBytes(kid!));
+      const cert = this.cert.get(StringBytes.stringToBytes(kid));
       System.require(cert != null, `[mod-sign-openid] Missing cert`);
 
       const header_b64u = base64ToBase64url(Base64.encode(jwt.header!));
@@ -183,8 +189,9 @@ export class ModSignOpenid extends ModSign {
    * @external
    * @readonly
    */
-  get_address_by_sub(args: modsignopenid.get_address_by_sub_args): modsignopenid.address {
-    const address = this.credential_address.get(args.sub!);
+  get_address(args: modsignopenid.get_address_args): modsignopenid.address {
+    const credential_bytes = this._get_credential_key(args.sub!, args.iss!);
+    const address = this.credential_address.get(credential_bytes);
     if (!address) {
       System.fail(`[mod-sign-openid] credential not found`);
     }
@@ -207,15 +214,8 @@ export class ModSignOpenid extends ModSign {
    * @external
    */
   set_cert(args: modsignopenid.set_cert_args): void {
-    // Check if the account authorized this transaction
-    const isAuthorized = System.checkAuthority(
-      authority.authorization_type.contract_call,
-      args.user!,
-    );
-    System.require(
-      isAuthorized,
-      `not authorized by ${Base58.encode(args.user!)}`,
-    );
+    const isAuthorized = System.checkAuthority(authority.authorization_type.contract_call, this.contractId);
+    System.require(isAuthorized,`not authorized by ${Base58.encode(this.contractId)}`);
 
     const cert = new modsignopenid.cert();
     cert.iss = args.iss!;
@@ -243,6 +243,11 @@ export class ModSignOpenid extends ModSign {
     result.type_id = MODULE_SIGN_TYPE_ID;
     result.version = "2.0.0";
     return result;
+  }
+
+  _get_credential_key(sub: string, iss: string) : Uint8Array {
+    const credential = new modsignopenid.credential(sub, iss);
+    return Protobuf.encode<modsignopenid.credential>(credential, modsignopenid.credential.encode);
   }
 }
 

@@ -14,11 +14,6 @@ export namespace modsignopenid {
         writer.uint32(18);
         writer.string(unique_name_iss);
       }
-
-      if (message.created_at != 0) {
-        writer.uint32(24);
-        writer.uint64(message.created_at);
-      }
     }
 
     static decode(reader: Reader, length: i32): credential {
@@ -36,10 +31,6 @@ export namespace modsignopenid {
             message.iss = reader.string();
             break;
 
-          case 3:
-            message.created_at = reader.uint64();
-            break;
-
           default:
             reader.skipType(tag & 7);
             break;
@@ -51,16 +42,10 @@ export namespace modsignopenid {
 
     sub: string | null;
     iss: string | null;
-    created_at: u64;
 
-    constructor(
-      sub: string | null = null,
-      iss: string | null = null,
-      created_at: u64 = 0
-    ) {
+    constructor(sub: string | null = null, iss: string | null = null) {
       this.sub = sub;
       this.iss = iss;
-      this.created_at = created_at;
     }
   }
 
@@ -205,6 +190,12 @@ export namespace modsignopenid {
         writer.uint32(18);
         writer.string(unique_name_sub);
       }
+
+      const unique_name_iss = message.iss;
+      if (unique_name_iss !== null) {
+        writer.uint32(26);
+        writer.string(unique_name_iss);
+      }
     }
 
     static decode(reader: Reader, length: i32): unregister_arguments {
@@ -222,6 +213,10 @@ export namespace modsignopenid {
             message.sub = reader.string();
             break;
 
+          case 3:
+            message.iss = reader.string();
+            break;
+
           default:
             reader.skipType(tag & 7);
             break;
@@ -233,10 +228,16 @@ export namespace modsignopenid {
 
     user: Uint8Array | null;
     sub: string | null;
+    iss: string | null;
 
-    constructor(user: Uint8Array | null = null, sub: string | null = null) {
+    constructor(
+      user: Uint8Array | null = null,
+      sub: string | null = null,
+      iss: string | null = null
+    ) {
       this.user = user;
       this.sub = sub;
+      this.iss = iss;
     }
   }
 
@@ -314,24 +315,34 @@ export namespace modsignopenid {
     }
   }
 
-  export class get_address_by_sub_args {
-    static encode(message: get_address_by_sub_args, writer: Writer): void {
+  export class get_address_args {
+    static encode(message: get_address_args, writer: Writer): void {
       const unique_name_sub = message.sub;
       if (unique_name_sub !== null) {
         writer.uint32(10);
         writer.string(unique_name_sub);
       }
+
+      const unique_name_iss = message.iss;
+      if (unique_name_iss !== null) {
+        writer.uint32(18);
+        writer.string(unique_name_iss);
+      }
     }
 
-    static decode(reader: Reader, length: i32): get_address_by_sub_args {
+    static decode(reader: Reader, length: i32): get_address_args {
       const end: usize = length < 0 ? reader.end : reader.ptr + length;
-      const message = new get_address_by_sub_args();
+      const message = new get_address_args();
 
       while (reader.ptr < end) {
         const tag = reader.uint32();
         switch (tag >>> 3) {
           case 1:
             message.sub = reader.string();
+            break;
+
+          case 2:
+            message.iss = reader.string();
             break;
 
           default:
@@ -344,9 +355,11 @@ export namespace modsignopenid {
     }
 
     sub: string | null;
+    iss: string | null;
 
-    constructor(sub: string | null = null) {
+    constructor(sub: string | null = null, iss: string | null = null) {
       this.sub = sub;
+      this.iss = iss;
     }
   }
 

@@ -7,7 +7,6 @@ import "koinos/options.proto";
 message credential {
    string sub = 1;
    string iss = 2;
-   uint64 created_at = 3;
 }
 
 message jwt {
@@ -25,6 +24,7 @@ message register_arguments {
 message unregister_arguments {
    bytes user = 1 [(koinos.btype) = ADDRESS];
    string sub = 2;
+   string iss = 3;
 }
 
 message get_credentials_args {
@@ -35,8 +35,9 @@ message get_credentials_result {
    repeated credential value = 1;
 }
 
-message get_address_by_sub_args {
+message get_address_args {
    string sub = 1;
+   string iss = 2;
 }
 
 message address {

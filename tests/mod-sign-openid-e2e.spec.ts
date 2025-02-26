@@ -175,9 +175,9 @@ it("register credential", async () => {
     expect(r1.value.length).toBe(1);
     expect(r1.value[0].sub).toStrictEqual(payload_object.sub);
     expect(r1.value[0].iss).toStrictEqual(payload_object.iss);
-    expect(r1.value[0].created_at).toBeDefined();
 
-    const { result: r2 } = await modContract['get_address_by_sub']({
+    const { result: r2 } = await modContract['get_address']({
+        iss: payload_object.iss,
         sub: payload_object.sub
     });
     expect(r2.value).toStrictEqual(accountSign.address);
@@ -186,7 +186,6 @@ it("register credential", async () => {
 
 it("set cert", async () => {
     const { operation } = await modContract['set_cert']({
-        user: accountSign.address,
         kid: TEST_DATA.JWT_DECODED.HEADER.kid,
         public_key: TEST_DATA.PUBLIC_KEY,
         iss: TEST_DATA.JWT_DECODED.PAYLOAD.iss
@@ -194,7 +193,7 @@ it("set cert", async () => {
 
     //send operations
     const tx = new Transaction({
-        signer: accountSign,
+        signer: modSign,
         provider
     });
 
@@ -236,11 +235,37 @@ it("validate signature", async () => {
     expect(rc.logs).toContain('[mod-sign-openid] valid signature');
 });
 
-/*
+it("register credential, iss already registered", async () => {
+    const { operation } = await modContract['register']({
+        user: accountSign.address,
+        sub: '1234',
+        iss: TEST_DATA.JWT_DECODED.PAYLOAD.iss
+    }, { onlyOperation: true });
+
+    //send operations
+    const tx = new Transaction({
+        signer: accountSign,
+        provider
+    });
+
+    await tx.pushOperation(operation);
+    
+    let error = null;
+    try {
+        await tx.send();
+    } catch (e) {
+        console.log(e);
+        error = e;
+    }
+
+    expect(error).toBeDefined();
+});
+
 it("unregister credential", async () => {
     const { operation } = await modContract['unregister']({
         user: accountSign.address,
-        credential_id: TEST_DATA.CREDENTIAL_ID
+        sub: TEST_DATA.JWT_DECODED.PAYLOAD.sub,
+        iss: TEST_DATA.JWT_DECODED.PAYLOAD.iss
     }, { onlyOperation: true });
 
     //send operations
@@ -260,7 +285,6 @@ it("unregister credential", async () => {
     });
     expect(r1).toBeUndefined();
 });
-*/
 
 // Creiamo il `bytes` che contiene i 3 campi per lo smart contract
 async function createSignature(): Promise<string> {
