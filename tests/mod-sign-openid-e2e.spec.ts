@@ -18,29 +18,7 @@ const verifierAbiPath = path.join(__dirname, "/../node_modules/@veive-io/verifie
 const TEST_DATA: any = {};
 
 TEST_DATA.JWT = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjVkMTJhYjc4MmNiNjA5NjI4NWY2OWU0OGFlYTk5MDc5YmI1OWNiODYiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiI0MDc0MDg3MTgxOTIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiI0MDc0MDg3MTgxOTIuYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMDEzNDg4ODc0MzI5NDg2MzU3NTUiLCJlbWFpbCI6ImFkcmkuZm9zY2hpQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJhdF9oYXNoIjoiVGtoRXpqdFpRX1RrTmlyUlNNMndqUSIsIm5hbWUiOiJBZHJpYW5vIEZvc2NoaSIsInBpY3R1cmUiOiJodHRwczovL2xoMy5nb29nbGV1c2VyY29udGVudC5jb20vYS9BQ2c4b2NJZkF3WlFidTlodUFsQmZ5NWhpYTVVNThhYjVILS11SThtU0l4TEtZWXQwZFZOWDNlWD1zOTYtYyIsImdpdmVuX25hbWUiOiJBZHJpYW5vIiwiZmFtaWx5X25hbWUiOiJGb3NjaGkiLCJpYXQiOjE3Mzk5NjQ2MTcsImV4cCI6MTczOTk2ODIxN30.BKLA6Vd2F0wzw9x_SxVL1_T5wvYIhCReE2Kdu55Hwf67jxeYgFLgREXhqcbZtJ9jXN2h1kWW6nuYShHyp0CwriH1uPIE4rvequmfjCLDkrWQghnZulVCqajQvDMSGaGkNoUZ3HL8DJvTZxBzOl8dsHovtFEtqxhll1YYuO2NB31HzZKtoTDwYglZv1T-DrYdJO27xY4of_xGiTt7fN16DXJmcvK23VHOww5O50UXHeEeitIpGnIqWGr5hw5ZiS8AlQmB3OizwSz-96_sx0djhSf9aX1EQyvzC3ZaxCg9PAWPip4XlwpmI_eF4Uxz_192xrmuu0PRgXcn5UpJ5AAfyw";
-TEST_DATA.JWT_DECODED = {
-    HEADER: {
-        "alg": "RS256",
-        "kid": "5d12ab782cb6096285f69e48aea99079bb59cb86",
-        "typ": "JWT"
-    },
-    PAYLOAD: {
-        "iss": "https://accounts.google.com",
-        "azp": "407408718192.apps.googleusercontent.com",
-        "aud": "407408718192.apps.googleusercontent.com",
-        "sub": "101348887432948635755",
-        "email": "adri.foschi@gmail.com",
-        "email_verified": true,
-        "at_hash": "TkhEzjtZQ_TkNirRSM2wjQ",
-        "name": "Adriano Foschi",
-        "picture": "https://lh3.googleusercontent.com/a/ACg8ocIfAwZQbu9huAlBfy5hia5U58ab5H--uI8mSIxLKYYt0dVNX3eX=s96-c",
-        "given_name": "Adriano",
-        "family_name": "Foschi",
-        "iat": 1739964617,
-        "exp": 1739968217
-    },
-    SIGNATURE: "BKLA6Vd2F0wzw9x_SxVL1_T5wvYIhCReE2Kdu55Hwf67jxeYgFLgREXhqcbZtJ9jXN2h1kWW6nuYShHyp0CwriH1uPIE4rvequmfjCLDkrWQghnZulVCqajQvDMSGaGkNoUZ3HL8DJvTZxBzOl8dsHovtFEtqxhll1YYuO2NB31HzZKtoTDwYglZv1T-DrYdJO27xY4of_xGiTt7fN16DXJmcvK23VHOww5O50UXHeEeitIpGnIqWGr5hw5ZiS8AlQmB3OizwSz-96_sx0djhSf9aX1EQyvzC3ZaxCg9PAWPip4XlwpmI_eF4Uxz_192xrmuu0PRgXcn5UpJ5AAfyw"
-};
+TEST_DATA.JWT_DECODED = decodeJwt(TEST_DATA.JWT);
 TEST_DATA.PUBLIC_KEY = "QAAAAJPGUC5luPifDN3dpVx8QOeeU4oX9zeIbsC8JozXIuasP3iDs8yi9HP0aNUdbhLLWJL2gtfxqEEzL0olGgp8u9pDPBxYeqalWMTadbOcXsW2T5O5MKLcVNVvHKWNqXoybuYHFLDCYQesTXDTYr-TUPSYOTWzLn0eJxXPtexoTPmUzpXWzD5s1NteaQmfyRz1R2kHTBeVqKdU08uIahPO0SVdIyNOC9f76dedxbGiTRCYu_E1J0DRAtOsjdsCUdUwtaGUo5lgVQpK-6DWlMiDkLGHf7Jq5VyrZtuLaMiOfThH4tE0yp0ojDXUG0exFvjC8g6NibGk61mrlsdxrSuMKBc1O6e5W39-DGH23ntyz1K4Fikv0j2_An-A-8Zpkb1ht49KHDWsbhbx1OU7cT2T5Nw5ACwsygVX3c9DVs6A51GYAI3imRnSX_g9fLRl7x0khf7JHqNHO-oo_XqbggVCwBuBlb6jlLvs1sG7CDxqr5QkdiJ1FpDnRXl7hKLmXLFH48UuylWt9bGhn69iJkhLOLhIeQh5efiOOW9JCfNoYuOYcLiyrIbhnZWoRJMT920LODlq872HDfz49IAm1uW4iQfn0Xteq2hvXzvDHHtlUilC9unuAs4513LnwBM_WYgIMeMAnUG9E6Lq47Yy_He0loCtlyOApPkLEFI4exQJ5p614qI2Yw"
     + "==";
 TEST_DATA.TX_ID = "0x1220b1e69be05c5ed1f4fff68ef4c3168142e5c9ebd1856fe27baab7cd6ab5609b4b";
@@ -322,4 +300,15 @@ async function createSignature(): Promise<string> {
     signWithPrefix.set(prefix, 0);
     signWithPrefix.set(sign, prefix.length);
     return utils.encodeBase64url(signWithPrefix);
+}
+
+export function decodeJwt (jwt: string): any {
+    const [header, payload, signature] = jwt.split('.');
+    const headerJson = (new TextDecoder()).decode(utils.decodeBase64url(header));
+    const payloadJson = (new TextDecoder()).decode(utils.decodeBase64url(payload))
+    return {
+        HEADER: JSON.parse(headerJson),
+        PAYLOAD: JSON.parse(payloadJson),
+        SIGNATURE: signature
+    };
 }

@@ -1,1 +1,1 @@
-export const VERIFIER_CONTRACT_ID = "1aRGmhamLpFSADRoWxV5LfEfxxyDDVYMJ";
+export const VERIFIER_CONTRACT_ID = "1MTJdMYEq73FAccf5ZEiwLt5z5ejd1VZ6y";
