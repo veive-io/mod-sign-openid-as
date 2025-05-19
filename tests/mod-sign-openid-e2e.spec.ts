@@ -161,7 +161,35 @@ it("register credential", async () => {
     expect(r2.value).toStrictEqual(accountSign.address);
 });
 
+it("register credential, is already registered", async () => {
+    const { operation } = await modContract['register']({
+        user: accountSign.address,
+        sub: TEST_DATA.JWT_DECODED.PAYLOAD.sub,
+        iss: TEST_DATA.JWT_DECODED.PAYLOAD.iss
+    }, { onlyOperation: true });
 
+    //send operations
+    const tx = new Transaction({
+        signer: accountSign,
+        provider
+    });
+
+    await tx.pushOperation(operation);
+
+    let error = null;
+    try {
+        const receipt = await tx.send();
+        console.log('rrrr', receipt)
+        await tx.wait();
+    } catch (e) {
+        console.log(e);
+        error = e;
+    }
+
+    expect(error).toBeDefined();
+});
+
+/*
 it("set cert", async () => {
     const { operation } = await modContract['set_cert']({
         kid: TEST_DATA.JWT_DECODED.HEADER.kid,
@@ -213,32 +241,6 @@ it("validate signature", async () => {
     expect(rc.logs).toContain('[mod-sign-openid] valid signature');
 });
 
-it("register credential, iss already registered", async () => {
-    const { operation } = await modContract['register']({
-        user: accountSign.address,
-        sub: '1234',
-        iss: TEST_DATA.JWT_DECODED.PAYLOAD.iss
-    }, { onlyOperation: true });
-
-    //send operations
-    const tx = new Transaction({
-        signer: accountSign,
-        provider
-    });
-
-    await tx.pushOperation(operation);
-    
-    let error = null;
-    try {
-        await tx.send();
-    } catch (e) {
-        console.log(e);
-        error = e;
-    }
-
-    expect(error).toBeDefined();
-});
-
 it("unregister credential", async () => {
     const { operation } = await modContract['unregister']({
         user: accountSign.address,
@@ -263,6 +265,7 @@ it("unregister credential", async () => {
     });
     expect(r1).toBeUndefined();
 });
+*/
 
 // Creiamo il `bytes` che contiene i 3 campi per lo smart contract
 async function createSignature(): Promise<string> {

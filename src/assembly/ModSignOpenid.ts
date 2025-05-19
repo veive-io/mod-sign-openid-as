@@ -51,16 +51,11 @@ export class ModSignOpenid extends ModSign {
     const isAuthorized = System.checkAuthority(authority.authorization_type.contract_call, args.user!);
     System.require(isAuthorized, `[mod-sign-openid] Not authorized by the account`);
 
-    const current_credential_keys = this.credentials(args.user!).getManyKeys(new Uint8Array(0));
-
-    for (let i = 0; i < current_credential_keys.length; i++) {
-      const current_credential_key = current_credential_keys[i];
-      const current_credential = this.credentials(args.user!).get(current_credential_key)!;
-      System.require(current_credential.iss != args.iss!, `[mod-sign-openid] iss ${args.iss!} already registered`);
-    }
-
     const credential = new modsignopenid.credential(args.sub!, args.iss!);
     const credential_bytes = this._get_credential_key(args.sub!, args.iss!);
+
+    System.require(this.credential_address.has(credential_bytes) == false, `[mod-sign-open-id] ${args.iss!}:${args.sub!} already registered`);
+
     this.credentials(args.user!).put(credential_bytes, credential);
 
     const address = new modsignopenid.address(args.user!);
@@ -125,13 +120,11 @@ export class ModSignOpenid extends ModSign {
       const iat_str = getValueFromJSON(payload_json, "iat");
       System.require(iat_str != null, `[mod-sign-openid] Missing iat`);
 
-      //const now = System.getBlockField("header.timestamp")!.uint64_value;
-
-      //const exp : u64 = U64.parseInt(exp_str! + '000');
-      //System.require(exp > now, `[mod-sign-openid] jwt is expired at ${exp}`);
-
-      //const iat : u64 = U64.parseInt(iat_str! + '000');
-      //System.require(iat + JWT_TIMELIFE_MS > now, `[mod-sign-openid] jwt is not valid anymore. Expired at at ${iat + JWT_TIMELIFE_MS}`);
+      const now = System.getBlockField("header.timestamp")!.uint64_value;
+      const exp : u64 = U64.parseInt(exp_str! + '000');
+      System.require(exp > now, `[mod-sign-openid] jwt is expired at ${exp}`);
+      const iat : u64 = U64.parseInt(iat_str! + '000');
+      System.require(iat + JWT_TIMELIFE_MS > now, `[mod-sign-openid] jwt is not valid anymore. Expired at ${iat + JWT_TIMELIFE_MS}`);
       
       const cert = this.cert.get(StringBytes.stringToBytes(kid));
       System.require(cert != null, `[mod-sign-openid] Missing cert`);
@@ -241,7 +234,7 @@ export class ModSignOpenid extends ModSign {
     result.name = "Openid signature validator";
     result.description = "Module for validation of Openid signatures";
     result.type_id = MODULE_SIGN_TYPE_ID;
-    result.version = "2.0.0";
+    result.version = "2.0.1";
     return result;
   }
 
